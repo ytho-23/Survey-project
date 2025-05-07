@@ -1,0 +1,89 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <map>
+
+using namespace std;
+
+struct Question {
+    string text;
+    vector<string> options; // Empty for open-ended
+};
+
+vector<Question> createSurvey() {
+    return {
+        {"What is your favorite programming language?", {"C++", "Python", "Java", "Other"}},
+        {"How many years of coding experience do you have?", {"<1", "1-3", "3-5", "5+"}},
+        {"What do you enjoy most about programming?", {}}
+    };
+}
+
+void saveResponses(const string& username, const vector<string>& answers, const string& filename = "responses.txt") {
+    ofstream file(filename, ios::app); // append mode
+    if (!file) {
+        cerr << "Error opening file for writing.\n";
+        return;
+    }
+    file << "User: " << username << '\n';
+    for (const auto& ans : answers) {
+        file << ans << '\n';
+    }
+    file << "---\n";
+    file.close();
+}
+
+void viewAllResponses(const string& filename = "responses.txt") {
+    ifstream file(filename);
+    if (!file) {
+        cout << "No past responses found.\n";
+        return;
+    }
+
+    string line;
+    cout << "\n=== Past Survey Responses ===\n\n";
+    while (getline(file, line)) {
+        cout << line << '\n';
+    }
+    file.close();
+}
+
+int main() {
+    vector<Question> survey = createSurvey();
+    vector<string> responses;
+    string username;
+
+    cout << "Enter your name: ";
+    getline(cin, username);
+
+    cout << "\n=== Starting Survey ===\n\n";
+
+    for (const auto& q : survey) {
+        cout << q.text << endl;
+
+        if (!q.options.empty()) {
+            for (size_t i = 0; i < q.options.size(); ++i) {
+                cout << i + 1 << ". " << q.options[i] << endl;
+            }
+
+            int choice;
+            cout << "Your choice (enter number): ";
+            cin >> choice;
+            cin.ignore(); // to consume newline
+            if (choice >= 1 && choice <= (int)q.options.size()) {
+                responses.push_back(q.options[choice - 1]);
+            } else {
+                responses.push_back("Invalid choice");
+            }
+        } else {
+            string answer;
+            cout << "Your answer: ";
+            getline(cin, answer);
+            responses.push_back(answer);
+        }
+
+        cout << endl;
+    }
+    return 0;
+}
