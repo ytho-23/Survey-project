@@ -83,6 +83,7 @@ int main() {
             responses.push_back(answer);
         }
 
+
         cout << endl;
     }
     return 0;
