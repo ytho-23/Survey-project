@@ -88,9 +88,11 @@ int main() {
         cout << endl;
     }
 
+
     saveResponses(username, responses);
 
     cout << "\nSurvey completed! Thank you, " << username << ".\n";
+
 
     char view;
     cout << "Would you like to view all previous responses? (y/n): ";
@@ -100,8 +102,7 @@ int main() {
         viewAllResponses();
     }
 
+
     return 0;
 }
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+
