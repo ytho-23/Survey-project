@@ -1,0 +1,152 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <regex>
+#include <map>
+
+using namespace std;
+
+// === MODEL ===
+class Question {
+public:
+    string text;
+    vector<string> options;
+
+    Question(const string& t, const vector<string>& opts) : text(t), options(opts) {}
+};
+
+class UserResponse {
+public:
+    string username;
+    vector<string> answers;
+};
+
+// === CONTROLLER ===
+class SurveyController {
+    vector<Question> questions;
+    string dataFile = "responses.json"; // simulate JSON "DB"
+    string sessionFile = "session.txt"; // simulate cookie/localStorage
+
+public:
+    SurveyController() {
+        questions = {
+            Question("What is your favorite programming language?", {"C++", "Python", "Java", "Other"}),
+            Question("How many years of coding experience do you have?", {"<1", "1-3", "3-5", "5+"}),
+            Question("What do you enjoy most about programming?", {}),
+            Question("Do you prefer frontend or backend development?", {"Frontend", "Backend", "Full Stack", "Not Sure"}),
+            Question("What is one feature you wish more programming languages had?", {})
+        };
+    }
+
+    bool isValidUsername(const string& name) {
+        regex re("^[a-zA-Z0-9_]{3,16}$");
+        return regex_match(name, re);
+    }
+
+    void saveSession(const string& username) {
+        ofstream session(sessionFile);
+        session << username;
+        session.close();
+    }
+
+    void takeSurvey(const string& username) {
+        UserResponse res;
+        res.username = username;
+
+        cout << "\n=== Starting Survey ===\n\n";
+        for (const auto& q : questions) {
+            cout << q.text << "\n";
+            if (!q.options.empty()) {
+                for (size_t i = 0; i < q.options.size(); ++i) {
+                    cout << i + 1 << ". " << q.options[i] << "\n";
+                }
+
+                int choice;
+                cout << "Your choice (enter number): ";
+                cin >> choice;
+                cin.ignore();
+                if (choice >= 1 && choice <= (int)q.options.size()) {
+                    res.answers.push_back(q.options[choice - 1]);
+                } else {
+                    res.answers.push_back("Invalid choice");
+                }
+            } else {
+                string answer;
+                cout << "Your answer: ";
+                getline(cin, answer);
+                while (answer.empty() || answer.size() > 100) {
+                    cout << "Invalid. Try again: ";
+                    getline(cin, answer);
+                }
+                res.answers.push_back(answer);
+            }
+            cout << "\n\n\n";
+        }
+
+        saveResponses(res);
+        cout << "Survey completed! Thank you, " << username << ".\n";
+    }
+
+    void saveResponses(const UserResponse& r) {
+        ofstream file(dataFile, ios::app);
+        file << "{\n\t\"user\": \"" << r.username << "\",\n\t\"answers\": [\n";
+        for (size_t i = 0; i < r.answers.size(); ++i) {
+            file << "\t\t\"" << r.answers[i] << "\"";
+            if (i != r.answers.size() - 1) file << ",";
+            file << "\n";
+        }
+        file << "\t]\n},\n";
+        file.close();
+    }
+
+    void viewResponses() {
+        ifstream file(dataFile);
+        if (!file) {
+            cout << "No survey data found.\n";
+            return;
+        }
+        cout << "\n=== All Survey Responses ===\n\n";
+        string line;
+        while (getline(file, line)) {
+            cout << line << '\n';
+        }
+    }
+
+    void deleteAllResponses() {
+        ofstream file(dataFile, ios::trunc);
+        cout << "All responses deleted.\n";
+    }
+};
+
+// === MAIN ===
+int main() {
+    SurveyController controller;
+    string username;
+
+    cout << "Enter your name (or type 'admin' for admin access): ";
+    getline(cin, username);
+
+    while (!controller.isValidUsername(username) && username != "admin") {
+        cout << "Invalid username (only letters, numbers, and underscores, 3-16 chars): ";
+        getline(cin, username);
+    }
+
+    controller.saveSession(username);
+
+    if (username == "admin") {
+        int choice;
+        cout << "\n=== Admin Menu ===\n";
+        cout << "1. View All Responses\n2. Delete All Responses\nChoice: ";
+        cin >> choice;
+        cin.ignore();
+        if (choice == 1) controller.viewResponses();
+        else if (choice == 2) controller.deleteAllResponses();
+        else cout << "Invalid choice.\n";
+    } else {
+        controller.takeSurvey(username);
+    }
+
+    return 0;
+}
